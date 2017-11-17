@@ -4,11 +4,7 @@ import gc
 import sys
 from sklearn.cross_validation import train_test_split
 
-import tensorflow as tf
-from keras.backend.tensorflow_backend import set_session
-config = tf.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = 0.8
-set_session(tf.Session(config=config))
+
 
 import pandas as pd
 data_label = pd.read_csv("../data/stage1_labels.csv")
@@ -46,20 +42,26 @@ for (dirpath, dirnames, filenames) in walk("../data/"):
             if label_dict.get(G_id) != None:
                 name_list.append(G_id)
                 file_list.append(path.join(dirpath, name))
-                response.append(label_dict.get(G_id))
+                response.append(label_dict.get(G_id)[4])
 
 # memory_limitation
 file_list = file_list[0:800]
 response = response[0:800]
 
+
 train_file, test_file, Y_train, Y_test = train_test_split(file_list, response, test_size=0.2, random_state=4)
-angle = [0, 3, 6, 9, 12, 15]
+Y_train = np.array(Y_train)
+Y_test = np.array(Y_test)
+
+angle = [0]
+width = list(range(150,350))
+height = list(range(200,400))
 index = 0
 sys.stderr.write("Road training data:" + '\n')
 for file in train_file:
     if (index % 100) == 0:
         sys.stderr.write("Current file : " + '[' + str(index + 1) + '/' + str(len(train_file)) + ']' + '\n')
-    graph = lib.DataInput.read_data(file)[:, :, angle]
+    graph = lib.DataInput.read_data(file)[width, :, :][:,height,:][:,:,angle]
     if index == 0:
         X_train = np.zeros([len(train_file)] + list(graph.shape))
     X_train[index, :, :, :] = graph
@@ -71,7 +73,7 @@ sys.stderr.write("Road test data:" + '\n')
 for file in test_file:
     if (index % 100) == 0:
         sys.stderr.write("Current file : " + '[' + str(index + 1) + '/' + str(len(test_file)) + ']' + '\n')
-    graph = lib.DataInput.read_data(file)[:, :, angle]
+    graph = lib.DataInput.read_data(file)[width, :, :][:,height,:][:,:,angle]
     if index == 0:
         X_test = np.zeros([len(test_file)] + list(graph.shape))
     X_test[index, :, :, :] = graph
@@ -83,8 +85,7 @@ from keras.layers import Input, Convolution2D, MaxPooling2D, Dense, Dropout, Fla
 
 #hyper parameters
 num_classes = len(Y_train[0])
-num_train= len(X_train)
-height, width, depth = X_train[0,:,:,:].shape
+num_train,height, width, depth = X_train.shape
 batch_size = 1 # in each iteration, we consider 1 training examples at once
 num_epochs = 200 # we iterate 200 times over the entire training set
 kernel_size = 3 # we will use 3x3 kernels throughout

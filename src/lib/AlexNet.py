@@ -1,14 +1,6 @@
 
 import numpy as np
 
-from convnetskeras.customlayers import crosschannelnormalization
-
-from convnetskeras.customlayers import Softmax4D
-
-from convnetskeras.customlayers import splittensor
-
-from convnetskeras.imagenet_tool import synset_to_dfs_ids
-
 from keras.layers import Activation
 
 from keras.layers import Dense
@@ -37,7 +29,7 @@ from scipy.misc import imread
 
 from scipy.misc import imresize
 
-def model_generator(inputshape,weights_path = None):
+def model_generator(inputshape,num_classes=2,weights_path = None):
 
     model = Sequential()
 
@@ -125,7 +117,7 @@ def model_generator(inputshape,weights_path = None):
 
     model.add(Dense(1000, name='dense_3'))
 
-    model.add(Activation('softmax', name='softmax'))
+    model.add(Dense(num_classes, activation='softmax',name = 'output'))
 
 
 
